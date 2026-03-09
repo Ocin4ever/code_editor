@@ -146,7 +146,16 @@ class SmaliParser:
             self.parse_iget()
 
     def parse_binary_branch(self):
-        """Format: if-eq vA, vB, :label"""
+        """
+        Format: 
+        if-eq vx, vy, :label
+        if-ne vx, vy, :label
+        if-lt vx, vy, :label
+        if-ge vx, vy, :label
+        if-gt vx, vy, :label
+        if-le vx, vy, :label
+        """
+
         self.eat('OP_BRANCH_BIN')
         reg1 = self.eat('REGISTER')
         self.check_register_access(reg1)
@@ -158,7 +167,16 @@ class SmaliParser:
         self.check_label_target(lab)
 
     def parse_zero_branch(self):
-        """Format: if-eqz vA, :label"""
+        """
+        Format: 
+        if-eqz vx, :label
+        if-nez vx, :label
+        if-ltz vx, :label
+        if-gez vx, :label
+        if-gtz vx, :label
+        if-lez vx, :label
+        """
+
         self.eat('OP_BRANCH_ZERO')
         r1 = self.eat('REGISTER')
         self.check_register_access(r1)
@@ -168,8 +186,14 @@ class SmaliParser:
     
     def parse_invoke_standard(self):
         """
-        parse instructions such as: invoke-X {vX, vY, ...}, MethodRef
+        Format:
+        invoke-virtual {vx, vy, ...}, MethodRef
+        invoke-super {vx, vy, ...}, MethodRef
+        invoke-direct {vx, vy, ...}, MethodRef
+        invoke-static {vx, vy, ...}, MethodRef
+        invoke-interface {vx, vy, ...}, MethodRef
         """
+
         self.eat('OP_INVOKE')
         
         self.eat('BRACE_OPEN')
@@ -194,8 +218,14 @@ class SmaliParser:
 
     def parse_invoke_range(self):
         """
-        parse instructions such as: invoke-X/range {v0 .. v4}, MethodRef
+        Format:
+        invoke-virtual/range {vx .. vy}, MethodRef
+        invoke-super/range {vx .. vy}, MethodRef
+        invoke-direct/range {vx .. vy}, MethodRef
+        invoke-static/range {vx .. vy}, MethodRef
+        invoke-interface/range {vx .. vy}, MethodRef
         """
+
         self.eat('OP_INVOKE_RANGE')
 
         self.eat('BRACE_OPEN')
@@ -220,7 +250,17 @@ class SmaliParser:
         self.eat('METHOD_REF')
 
     def parse_iget(self):
-        """Format: if-eqz vA, :label"""
+        """
+        Format: 
+        iget vx, vy, :label
+        iget-wide vx, vy, :label
+        iget-object vx, vy, :label
+        iget-boolean vx, vy, :label
+        iget-byte vx, vy, :label
+        iget-char vx, vy, :label
+        iget-short vx, vy, :label
+        """
+
         self.eat('OP_IGET')
         r1 = self.eat('REGISTER')
         self.check_register_access(r1)
@@ -243,6 +283,7 @@ class SmaliParser:
         move-object/from16 vx, vy
         move-object/16 vx, vy
         """
+
         token = self.eat('OP_MOVE')
         op_name = token.value
 
@@ -270,6 +311,7 @@ class SmaliParser:
         move-result-object vx
         move-exception vx
         """
+        
         token = self.eat('OP_MOVE_RESULT')
         reg = self.eat('REGISTER')
         self.check_register_access(reg)

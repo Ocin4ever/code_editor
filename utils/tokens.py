@@ -35,7 +35,7 @@ TOKEN_TYPES = [
     # Matches: invoke-virtual/range, invoke-static/range, etc.
     ('OP_INVOKE_RANGE', r'invoke-(virtual|direct|static|super|interface)/range'),
 
-    ('OP_IGET',       r'iget-(object|boolean)'),
+    ('OP_IGET',       r'iget(-wide|-object|-boolean|-byte|-char|-short)?'),
 
     # --- Syntax for Argument Lists ---
     ('BRACE_OPEN',   r'{'),
