@@ -18,7 +18,7 @@ TOKEN_TYPES = [
     # Matches: move, move/from16, move/16, move-wide, move-object, etc.
     ('OP_MOVE',        r'move(-wide|-object)?(/from16|/16)?'),        
     ('OP_RETURN',    r'return-void'),
-    ('OP_GOTO',      r'goto'),
+    ('OP_GOTO',      r'goto(/16|/32)?'),
 
     # Matches if-eq, if-ne, if-lt, if-ge, if-gt, if-le
     ('OP_BRANCH_BIN',  r'if-(eq|ne|lt|ge|gt|le)(?![z])'), 

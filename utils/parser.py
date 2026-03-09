@@ -123,9 +123,7 @@ class SmaliParser:
             self.parse_move_result()
 
         elif token.type == 'OP_GOTO':
-            self.eat('OP_GOTO')
-            lab = self.eat('LABEL')
-            self.check_label_target(lab) # <--- Validates Jump
+            self.parse_goto()
             
         elif token.type == 'OP_RETURN':
             self.eat('OP_RETURN')
@@ -350,3 +348,15 @@ class SmaliParser:
         reg1 = self.eat('REGISTER')
         self.check_register_access(reg1)
         self.check_register_width(reg1, 8)
+
+    def parse_goto(self):
+        """
+        Format: 
+        goto :label
+        goto/16 :label
+        goto/32 :label
+        """
+
+        self.eat('OP_GOTO')
+        lbl = self.eat('LABEL')
+        self.check_label_target(lbl)
