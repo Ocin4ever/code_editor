@@ -126,7 +126,7 @@ class SmaliParser:
             self.parse_goto()
             
         elif token.type == 'OP_RETURN':
-            self.eat('OP_RETURN')
+            self.parse_return()
 
         elif token.type == 'OP_INVOKE':
             self.parse_invoke_standard()
@@ -360,3 +360,21 @@ class SmaliParser:
         self.eat('OP_GOTO')
         lbl = self.eat('LABEL')
         self.check_label_target(lbl)
+
+    def parse_return(self):
+        """
+        Format: 
+        return vx
+        return-void
+        return-wide vx
+        return-object vx
+        """
+
+        tok = self.eat('OP_RETURN')
+        op_name = tok.value
+
+        if 'void' in op_name:
+            return
+        else:
+            reg1 = self.eat('REGISTER')
+            self.check_register_access(reg1)
