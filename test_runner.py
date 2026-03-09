@@ -241,6 +241,27 @@ def main():
     """
     if run_test("Method: method inside a method", code_method_in_method, "Unexpected method declaration: already in a method"): tests_passed += 1
 
+    total_tests += 1
+    code_random = """
+    # virtual methods
+    .method public final run()V
+        .registers 2
+
+        iget-object v0, p0, Lcom/samsung/android/settings/uwb/UwbPreferenceController$1;->this$0:Lcom/samsung/android/settings/uwb/UwbPreferenceController;
+
+        invoke-static {v0}, Lcom/samsung/android/settings/uwb/UwbPreferenceController;->-$$Nest$mupdateSummary(Lcom/samsung/android/settings/uwb/UwbPreferenceController;)V
+
+        iget-object v0, p0, Lcom/samsung/android/settings/uwb/UwbPreferenceController$1;->this$0:Lcom/samsung/android/settings/uwb/UwbPreferenceController;
+
+        invoke-static {v0}, Lcom/samsung/android/settings/uwb/UwbPreferenceController;->-$$Nest$fgetmUwbSettingPolicy(Lcom/samsung/android/settings/uwb/UwbPreferenceController;)Lcom/samsung/android/settings/uwb/UwbSettingPolicy;
+
+        move-result-object v0
+
+        return-void
+    .end method
+    """
+    if run_test("Global: good code", code_random): tests_passed += 1
+
     # --- Summary ---
     print("\n" + "="*30)
     print(f"Tests Passed: {tests_passed}/{total_tests}")

@@ -123,12 +123,10 @@ class SmaliParser:
             self.parse_zero_branch()
 
         elif token.type == 'OP_MOVE':
-            self.eat('OP_MOVE')
-            reg1 = self.eat('REGISTER')
-            self.check_register_access(reg1)
-            self.eat('COMMA')
-            reg2 = self.eat('REGISTER')
-            self.check_register_access(reg2)
+            self.parse_move()
+
+        elif token.type == 'OP_MOVE_RESULT':
+            self.parse_move_result()
 
         elif token.type == 'OP_GOTO':
             self.eat('OP_GOTO')
@@ -231,3 +229,48 @@ class SmaliParser:
         self.check_register_access(r2)
         self.eat('COMMA')
         self.eat('FIELD_REF')
+
+    def parse_move(self):
+        """
+        Format:
+        move vx,vy
+        move-wide vx, vy
+        move-object vx, vy
+        move/from16 vx, vy
+        move/16 vx, vy
+        move-wide/from16 vx, vy
+        move-wide/16 vx, vy
+        move-object/from16 vx, vy
+        move-object/16 vx, vy
+        """
+        token = self.eat('OP_MOVE')
+        op_name = token.value
+
+        reg1 = self.eat('REGISTER')
+        self.check_register_access(reg1)
+        self.eat('COMMA')
+        reg2 = self.eat('REGISTER')
+        self.check_register_access(reg2)
+
+        if '/from16' in op_name:
+            self.check_register_width(reg1, 8)
+            self.check_register_width(reg2, 16)
+        elif '/16' in op_name:
+            self.check_register_width(reg1, 16)
+            self.check_register_width(reg2, 16)
+        else:
+            self.check_register_width(reg1, 8)
+            self.check_register_width(reg2, 8)
+
+    def parse_move_result(self):
+        """
+        Format:
+        move-result vx
+        move-result-wide vx
+        move-result-object vx
+        move-exception vx
+        """
+        token = self.eat('OP_MOVE_RESULT')
+        reg = self.eat('REGISTER')
+        self.check_register_access(reg)
+        self.check_register_width(reg, 8)

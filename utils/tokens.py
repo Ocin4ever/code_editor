@@ -14,7 +14,11 @@ TOKEN_TYPES = [
     ('OP_CONST_4',   r'const/4'),
     ('OP_CONST_16',  r'const/16'),
     ('OP_CONST_STR', r'const-string(/jumbo)?'), 
-    ('OP_MOVE',      r'move'),          
+    # Matches: move-result, move-result-wide, move-result-object, move-exception
+    ('OP_MOVE_RESULT', r'move-(result(-wide|-object)?|exception)'),
+    
+    # Matches: move, move/from16, move/16, move-wide, move-object, etc.
+    ('OP_MOVE',        r'move(-wide|-object)?(/from16|/16)?'),        
     ('OP_RETURN',    r'return-void'),
     ('OP_GOTO',      r'goto'),
 
