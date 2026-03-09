@@ -334,8 +334,8 @@ class SmaliParser:
             self.check_register_width(reg1, 16)
             self.check_register_width(reg2, 16)
         else:
-            self.check_register_width(reg1, 8)
-            self.check_register_width(reg2, 8)
+            self.check_register_width(reg1, 4)
+            self.check_register_width(reg2, 4)
 
     def parse_move_result(self):
         """
