@@ -1,0 +1,58 @@
+TOKEN_TYPES = [
+    # --- Comments ---
+    ('COMMENT',      r'#.*'),
+    
+    # --- Directives ---
+    ('DIR_METHOD_START', r'\.method'),      
+    ('DIR_METHOD_END',   r'\.end method'),  
+    ('DIR_REGISTERS',    r'\.registers'), 
+    # ('METHOD_REF',   r'L[\w/$]+;->[\w$]+\(.*\)\S+'),
+    ('METHOD_REF',   r'L[\w/$]+;->[\w$<>-]+\(.*\)\S+'), 
+    ('FIELD_REF',        r'L[\w/$]+;->[\w$]+:\S+'), 
+    
+    # --- Instructions ---
+    ('OP_CONST_4',   r'const/4'),
+    ('OP_CONST_16',  r'const/16'),
+    ('OP_CONST_STR', r'const-string(/jumbo)?'), 
+    ('OP_MOVE',      r'move'),          
+    ('OP_RETURN',    r'return-void'),
+    ('OP_GOTO',      r'goto'),
+
+    # Matches if-eq, if-ne, if-lt, if-ge, if-gt, if-le
+    ('OP_BRANCH_BIN',  r'if-(eq|ne|lt|ge|gt|le)(?![z])'), 
+    
+    # Matches if-eqz, if-nez, if-ltz, if-gez, if-gtz, if-lez
+    ('OP_BRANCH_ZERO', r'if-(eqz|nez|ltz|gez|gtz|lez)'),  
+
+    # --- Invocation Instructions ---
+    # Matches: invoke-virtual, invoke-static, invoke-direct, etc.
+    ('OP_INVOKE',       r'invoke-(virtual|direct|static|super|interface)(?!/range)'),
+    
+    # Matches: invoke-virtual/range, invoke-static/range, etc.
+    ('OP_INVOKE_RANGE', r'invoke-(virtual|direct|static|super|interface)/range'),
+
+    ('OP_IGET',       r'iget-(object|boolean)'),
+
+    # --- Syntax for Argument Lists ---
+    ('BRACE_OPEN',   r'{'),
+    ('BRACE_CLOSE',  r'}'),
+    ('DOT_DOT',      r'\.\.'), # For range syntax "v0 .. v4"  
+    
+    # --- Operands ---
+    ('REGISTER',     r'[vp]\d+'),       
+    ('LABEL',        r':[a-zA-Z0-9_]+'),
+    ('HEX_LITERAL',  r'-?0x[0-9a-fA-F]+'), 
+    ('INT_LITERAL',  r'-?\d+'),         
+    ('STRING',       r'"[^"]*"'),       
+    ('COMMA',        r','),
+    
+    # --- Utility ---
+    ('WHITESPACE',   r'\s+'),           
+    ('UNKNOWN',      r'.'),             
+]
+
+class Token:
+    def __init__(self, type_, value):
+        self.type = type_
+        self.value = value
+    def __repr__(self): return f"Token({self.type}, '{self.value}')"

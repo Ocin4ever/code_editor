@@ -1,0 +1,253 @@
+import sys
+from utils import Lexer
+from utils import SmaliParser
+from utils import MethodContext
+
+class Colors:
+    PASS = '\033[92m'
+    FAIL = '\033[91m'
+    RESET = '\033[0m'
+
+def run_test(name, code, expected_error_substring=None):
+    """
+    Runs a single test case.
+    - If expected_error_substring is None, we expect PASS.
+    - If it's a string, we expect a FAIL containing that string.
+    """
+    lexer = Lexer()
+    ctx = MethodContext()
+    lines = code.splitlines()
+    error_found = None
+
+    try:
+        for i, line in enumerate(lines):
+            clean = line.strip()
+            if not clean: continue
+            
+            tokens = lexer.tokenize(line)
+            if not tokens: continue
+
+            parser = SmaliParser(tokens, ctx, lines, i)
+            parser.parse_line()
+
+        if ctx.in_method:
+            raise SyntaxError("Unexpected EOF: missing '.end method'")
+
+    except Exception as e:
+        error_found = str(e)
+
+    # --- Result Evaluation ---
+    if expected_error_substring is None:
+        if error_found:
+            print(f"{Colors.FAIL}[FAIL] {name}{Colors.RESET}")
+            print(f"       Expected: SUCCESS")
+            print(f"       Got Error: {error_found}")
+            return False
+        else:
+            print(f"{Colors.PASS}[PASS] {name}{Colors.RESET}")
+            return True
+    else:
+        if error_found and expected_error_substring in error_found:
+            print(f"{Colors.PASS}[PASS] {name}{Colors.RESET}")
+            return True
+        else:
+            print(f"{Colors.FAIL}[FAIL] {name}{Colors.RESET}")
+            print(f"       Expected Error containing: '{expected_error_substring}'")
+            print(f"       Got: {error_found if error_found else 'SUCCESS (No Error)'}")
+            return False
+
+# ==========================================
+# TEST CASES
+# ==========================================
+
+def main():
+    tests_passed = 0
+    total_tests = 0
+
+    print("=== Running Regression Tests ===\n")
+
+    # --- 1. Basic Semantic Checks ---
+    total_tests += 1
+    code_semantics_valid = """
+    .method public test()V
+        .registers 4
+        const/4 v0, -8
+        const/4 v1, 7
+        move v0, v1
+    .end method
+    """
+    if run_test("Semantics: Valid const/4 range", code_semantics_valid): tests_passed += 1
+
+    total_tests += 1
+    code_semantics_invalid = """
+    .method public test()V
+        .registers 4
+        const/4 v0, 8
+    .end method
+    """
+    # 8 is binary 1000, which is -8 in 4-bit signed, but standard parsers reject +8 for const/4
+    # Our literal width checker should catch this.
+    if run_test("Semantics: Invalid const/4 range", code_semantics_invalid, "out of range"): tests_passed += 1
+
+
+    # --- 2. Scope & Register Bounds ---
+    total_tests += 1
+    code_scope_reg = """
+    .method public test()V
+        .registers 2
+        move v0, v1
+        move v1, v2
+    .end method
+    """
+    if run_test("Scope: Register Out of Bounds", code_scope_reg, "Local register v2 out of bounds (max v1)"): tests_passed += 1
+
+    total_tests += 1
+    code_scope_orphan = """
+    const/4 v0, 1
+    """
+    if run_test("Scope: Instruction outside method", code_scope_orphan, "Instruction 'v0' outside method"): tests_passed += 1
+
+
+    # --- 3. Label Resolution (Forward Jumps) ---
+    total_tests += 1
+    code_jumps = """
+    .method public test()V
+        .registers 1
+        goto :future
+        return-void
+        :future
+    .end method
+    """
+    if run_test("Labels: Valid Forward Jump", code_jumps): tests_passed += 1
+
+    total_tests += 1
+    code_jumps_bad = """
+    .method public test()V
+        .registers 1
+        goto :nowhere
+    .end method
+    """
+    if run_test("Labels: Invalid Jump Target", code_jumps_bad, "Jump target ':nowhere' not found"): tests_passed += 1
+
+
+    # --- 4. Branching Logic (Binary vs Zero) ---
+    total_tests += 1
+    code_branch_mixed = """
+    .method public test()V
+        .registers 2
+        :start
+        if-eq v0, v1, :start
+        if-eqz v0, :start
+    .end method
+    """
+    if run_test("Branching: Correct usage of if-eq and if-eqz", code_branch_mixed): tests_passed += 1
+
+    total_tests += 1
+    code_branch_fail = """
+    .method public test()V
+        .registers 2
+        :start
+        if-eqz v0, v1, :start
+    .end method
+    """
+    if run_test("Branching: if-eqz with too many regs", code_branch_fail, "Expected LABEL"): tests_passed += 1
+
+
+    # --- 5. Parameter Logic (Wide Types) ---
+    total_tests += 1
+    code_params_wide = """
+    .method public test(J)V
+        .registers 1
+        # (J)V means p0 is 'this', p1+p2 is Long Arg.
+        # Max p-index is 2.
+        move v0, p2
+    .end method
+    """
+    if run_test("Params: Wide Type (Long) calculation", code_params_wide): tests_passed += 1
+
+    total_tests += 1
+    code_params_array = """
+    .method public static test([J)V
+        .registers 1
+        # ([J)V is static (no this). Arg is Array (1 reg).
+        # Max p-index is 0.
+        move v0, p1
+    .end method
+    """
+    if run_test("Params: Array of Longs (Reference)", code_params_array, "Parameter register p1 out of bounds"): tests_passed += 1
+
+    total_tests += 1
+    code_invoke_valid = """
+    .method public test()V
+        .registers 5
+        # Standard: 3 args
+        invoke-virtual {v0, v1, v2}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+        
+        # Range: v0 to v4 (5 registers)
+        invoke-static/range {v0 .. v4}, Lutil/Log;->print()V
+    .end method
+    """
+    if run_test("Invoke: Valid Standard and Range", code_invoke_valid): tests_passed += 1
+
+    total_tests += 1
+    code_invoke_fail_limit = """
+    .method public test()V
+        .registers 10
+        # Fail: Standard invoke cannot take 6 arguments
+        invoke-static {v0, v1, v2, v3, v4, v5}, Lbad/Code;->run()V
+    .end method
+    """
+    if run_test("Invoke: Exceeds 5 args limit", code_invoke_fail_limit, "max 5 registers"): tests_passed += 1
+
+    total_tests += 1
+    code_invoke_fail_range = """
+    .method public test()V
+        .registers 5
+        # Fail: Start > End
+        invoke-direct/range {v2 .. v0}, Lbad/Range;->run()V
+    .end method
+    """
+    if run_test("Invoke: Invalid Range Order", code_invoke_fail_range, "Invalid register range"): tests_passed += 1
+
+    total_tests += 1
+    code_params_array = """
+    .method public static test()V
+        .registers 1
+        # No parameter.
+        move v0, p0
+    .end method
+    """
+    if run_test("Params: Invalid call with no parameter", code_params_array, "Parameter register p0 out of bounds. Method has no parameters."): tests_passed += 1
+
+    total_tests += 1
+    code_method_unended = """
+    .method public test()V
+        .registers 2
+        invoke-static {v1}, Lcom/samsung/android/settings/uwb/UwbPreferenceController;->-$$Nest$fgetmUwbManager(Lcom/samsung/android/settings/uwb/UwbPreferenceController;)Landroid/uwb/UwbManager;
+        return-void
+    """
+    if run_test("Method: Invalid call with no closing", code_method_unended, "Unexpected EOF: missing '.end method'"): tests_passed += 1
+
+    total_tests += 1
+    code_method_in_method = """
+    .method public test()V
+        .registers 1
+        return-void
+    .method public test()V
+        .registers 1
+        return-void
+    .end method
+    .end method
+    """
+    if run_test("Method: method inside a method", code_method_in_method, "Unexpected method declaration: already in a method"): tests_passed += 1
+
+    # --- Summary ---
+    print("\n" + "="*30)
+    print(f"Tests Passed: {tests_passed}/{total_tests}")
+    if tests_passed == total_tests:
+        print(f"{Colors.PASS}FINE{Colors.RESET}")
+    else:
+        print(f"{Colors.FAIL}REGRESSIONS DETECTED{Colors.RESET}")
+
+if __name__ == "__main__":
+    main()
