@@ -108,7 +108,7 @@ class SmaliParser:
         token = self.current_token()
         
         if token.type == 'OP_CONST':
-           self. parse_const()
+           self.parse_const()
 
         elif token.type == 'OP_BRANCH_BIN':
             self.parse_binary_branch()
