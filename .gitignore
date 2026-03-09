@@ -1,0 +1,32 @@
+# Ignorer les dossiers __pycache__
+__pycache__/
+
+# Ignorer les fichiers .pyc et .pyo
+*.py[cod]
+
+# Ignorer les fichiers .swp de Vim
+*.swp
+
+# Ignorer les fichiers de configuration de l'IDE
+.idea/
+.vscode/
+
+# Ignorer les fichiers de configuration de l'environnement virtuel
+venv/
+env/
+
+# Ignorer les fichiers de configuration de l'utilisateur
+*.DS_Store
+
+# Ignorer les fichiers de configuration de Jupyter Notebook
+.ipynb_checkpoints/
+
+# Ignorer les fichiers de configuration de Python
+*.pyproj
+*.pyuser
+
+# Ignorer les fichiers de configuration de build
+build/
+dist/
+*.egg-info/
+
