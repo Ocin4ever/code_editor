@@ -11,9 +11,7 @@ TOKEN_TYPES = [
     ('FIELD_REF',        r'L[\w/$]+;->[\w$]+:\S+'), 
     
     # --- Instructions ---
-    ('OP_CONST_4',   r'const/4'),
-    ('OP_CONST_16',  r'const/16'),
-    ('OP_CONST_STR', r'const-string(/jumbo)?'), 
+    ('OP_CONST',   r'const(?:-wide(?:/16|/32|)|(?:/4|/16|/high16)|-string(?:-jumbo)?|-class)?'),
     # Matches: move-result, move-result-wide, move-result-object, move-exception
     ('OP_MOVE_RESULT', r'move-(result(-wide|-object)?|exception)'),
     

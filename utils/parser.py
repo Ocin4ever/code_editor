@@ -107,14 +107,8 @@ class SmaliParser:
     def parse_instruction(self):
         token = self.current_token()
         
-        if token.type == 'OP_CONST_4':
-            self.eat('OP_CONST_4')
-            reg = self.eat('REGISTER')
-            self.check_register_width(reg, 4)
-            self.check_register_access(reg)
-            self.eat('COMMA')
-            lit = self.eat('INT_LITERAL')
-            self.check_literal_width(lit, 4)
+        if token.type == 'OP_CONST':
+           self. parse_const()
 
         elif token.type == 'OP_BRANCH_BIN':
             self.parse_binary_branch()
@@ -144,6 +138,46 @@ class SmaliParser:
 
         elif token.type == 'OP_IGET':
             self.parse_iget()
+
+    def parse_const(self):
+        """
+        Format: 
+        const vx, lit
+        const/4 vx, lit
+        const/16 vx, lit
+        const/high16 vx, lit
+        const-wide vx, lit
+        const-wide/16 vx, lit
+        const-wide/high16 vx, lit
+        const-wide/32 vx, lit
+        const-string vx, str
+        const-string-jumbo vx, str
+        const-class vx, obj
+        """
+
+        tok = self.eat('OP_CONST')
+        op_name = tok.value
+
+        reg1 = self.eat('REGISTER')
+        self.check_register_access(reg1)
+        self.eat('COMMA')
+
+        if 'const-class' in op_name:
+            self.eat('INT_LITERAL') # This needs to be handled properly
+        elif 'const-string' in op_name:
+            self.eat('STRING')
+        else:
+            lit1 = self.eat('INT_LITERAL')
+            if '32' in op_name:
+                self.check_register_width(reg1, 8)
+                self.check_literal_width(lit1, 32)
+            if '16' in op_name:
+                self.check_register_width(reg1, 8)
+                self.check_literal_width(lit1, 16)
+            if '4' in op_name:
+                # Apparently registers are stored on 8 bits (except for const/4)
+                self.check_register_width(reg1, 4)
+                self.check_literal_width(lit1, 4)
 
     def parse_binary_branch(self):
         """
