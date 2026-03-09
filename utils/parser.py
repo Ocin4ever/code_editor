@@ -163,8 +163,8 @@ class SmaliParser:
         reg2 = self.eat('REGISTER')
         self.check_register_access(reg2)
         self.eat('COMMA')
-        lab = self.eat('LABEL')
-        self.check_label_target(lab)
+        lbl1 = self.eat('LABEL')
+        self.check_label_target(lbl1)
 
     def parse_zero_branch(self):
         """
@@ -178,11 +178,11 @@ class SmaliParser:
         """
 
         self.eat('OP_BRANCH_ZERO')
-        r1 = self.eat('REGISTER')
-        self.check_register_access(r1)
+        reg1 = self.eat('REGISTER')
+        self.check_register_access(reg1)
         self.eat('COMMA')
-        lbl = self.eat('LABEL')
-        self.check_label_target(lbl)
+        lbl1 = self.eat('LABEL')
+        self.check_label_target(lbl1)
     
     def parse_invoke_standard(self):
         """
@@ -200,8 +200,8 @@ class SmaliParser:
         arg_count = 0
         if self.current_token().type != 'BRACE_CLOSE':
             while True:
-                reg = self.eat('REGISTER')
-                self.check_register_access(reg)
+                reg1 = self.eat('REGISTER')
+                self.check_register_access(reg1)
                 arg_count += 1
                 
                 if self.current_token().type == 'COMMA':
@@ -229,21 +229,21 @@ class SmaliParser:
         self.eat('OP_INVOKE_RANGE')
 
         self.eat('BRACE_OPEN')
-        start_reg = self.eat('REGISTER')
-        self.check_register_access(start_reg)
+        reg1 = self.eat('REGISTER')
+        self.check_register_access(reg1)
         self.eat('DOT_DOT')
-        end_reg = self.eat('REGISTER')
-        self.check_register_access(end_reg)
+        reg2 = self.eat('REGISTER')
+        self.check_register_access(reg2)
         self.eat('BRACE_CLOSE')
         
         # Validate Range Consistency (e.g. v0 .. v4)
-        s_type, s_idx = start_reg.value[0], int(start_reg.value[1:])
-        e_type, e_idx = end_reg.value[0], int(end_reg.value[1:])
+        s_type, s_idx = reg1.value[0], int(reg1.value[1:])
+        e_type, e_idx = reg2.value[0], int(reg2.value[1:])
         
         if s_type != e_type:
             raise ValueError("Range registers must be of the same type (v or p).")
         if s_idx > e_idx:
-            raise ValueError(f"Invalid register range: {start_reg.value} .. {end_reg.value}")
+            raise ValueError(f"Invalid register range: {reg1.value} .. {reg2.value}")
 
         self.eat('COMMA')
 
@@ -262,11 +262,11 @@ class SmaliParser:
         """
 
         self.eat('OP_IGET')
-        r1 = self.eat('REGISTER')
-        self.check_register_access(r1)
+        reg1 = self.eat('REGISTER')
+        self.check_register_access(reg1)
         self.eat('COMMA')
-        r2 = self.eat('REGISTER')
-        self.check_register_access(r2)
+        reg2 = self.eat('REGISTER')
+        self.check_register_access(reg2)
         self.eat('COMMA')
         self.eat('FIELD_REF')
 
@@ -284,8 +284,8 @@ class SmaliParser:
         move-object/16 vx, vy
         """
 
-        token = self.eat('OP_MOVE')
-        op_name = token.value
+        tok = self.eat('OP_MOVE')
+        op_name = tok.value
 
         reg1 = self.eat('REGISTER')
         self.check_register_access(reg1)
@@ -311,8 +311,8 @@ class SmaliParser:
         move-result-object vx
         move-exception vx
         """
-        
-        token = self.eat('OP_MOVE_RESULT')
-        reg = self.eat('REGISTER')
-        self.check_register_access(reg)
-        self.check_register_width(reg, 8)
+
+        self.eat('OP_MOVE_RESULT')
+        reg1 = self.eat('REGISTER')
+        self.check_register_access(reg1)
+        self.check_register_width(reg1, 8)
