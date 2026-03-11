@@ -262,6 +262,27 @@ def main():
     """
     if run_test("Global: good code", code_random): tests_passed += 1
 
+    total_tests += 1
+    code_registers_vs_locals = """
+    .method static public test([J)V
+        .registers 3
+
+        const/4 v1, 0
+
+        return-void
+    .end method
+
+    .method static public test([J)V
+        .locals 3
+
+        const/4 v1, 0
+
+        return-void
+    .end method
+    """ 
+    # The first method should have 3 registers declared and the second one 4 registers   
+    if run_test("Method: registers vs locals", code_registers_vs_locals): tests_passed += 1
+
     # --- Summary ---
     print("\n" + "="*30)
     print(f"Tests Passed: {tests_passed}/{total_tests}")
