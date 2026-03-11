@@ -3,12 +3,11 @@ import re
 class MethodContext:
     def __init__(self):
         self.in_method = False
+        self.is_static = None
+        self.param_count = 0
         self.register_count = 0
         self.defined_labels = set()
-        self.is_static = False
-        self.param_count = 0
 
-        # Ex: {0: 'I', 1: 'Ljava/lang/String;'}
         self.v_types = {} 
         self.p_types = {}
 
@@ -92,8 +91,15 @@ class MethodContext:
         return self.param_count - 1
 
     def exit_method(self):
+        """
+        Clear variables after exiting a method
+        """
         self.in_method = False
+        self.is_static = None
+        self.param_count = 0
+        self.register_count = 0
         self.defined_labels.clear()
+
         self.v_types.clear()
         self.p_types.clear()
 
