@@ -5,7 +5,7 @@ TOKEN_TYPES = [
     # --- Directives ---
     ('DIR_METHOD_START', r'\.method'),      
     ('DIR_METHOD_END',   r'\.end method'),  
-    ('DIR_REGISTERS',    r'\.registers'), 
+    ('DIR_REGISTERS',    r'\.registers|\.locals'), 
     # ('METHOD_REF',   r'L[\w/$]+;->[\w$]+\(.*\)\S+'),
     ('METHOD_REF',   r'L[\w/$]+;->[\w$<>-]+\(.*\)\S+'), 
     ('FIELD_REF',        r'L[\w/$]+;->[\w$]+:\S+'), 
