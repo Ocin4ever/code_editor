@@ -96,15 +96,36 @@ class MethodContext:
         self.defined_labels.clear()
         self.v_types.clear()
         self.p_types.clear()
-        self.register_count = 0
 
-    def set_registers(self, count):
+    def set_registers(self, count, directive='.registers'):
         """
         Initiate values seens from '.registers 5' or '.locals 5'
+
+        Default:
+            '.registers': default apktool output
+
+        Note: 
+            '.registers': give the explicit number of v registers (including p registers)
+            '.locals': give the number of p registers (excluding p registers)
         """
-        self.register_count = count
-        # Initiate local registers (vX) to None
-        self.v_types = {i: None for i in range(count)}
+
+        if self.in_method:
+            match directive:
+                case '.registers':
+                    self.register_count = count
+                case '.locals':
+                    self.register_count = count + self.param_count
+                case _:
+                    raise SyntaxError(f"Unknown directive: {directive}")
+        else:
+            raise Exception("This method can't be called outside a function")
+        self.v_types = {i: None for i in range(self.register_count)}
+
+        # Puts p registers types at the end of v_types
+        for p_register in range(0, self.param_count):
+            v_idx = self.register_count - p_register - 1
+            p_idx = self.param_count - p_register - 1
+            self.v_types[v_idx] = self.p_types[p_idx]
 
     def has_label(self, label_name):
         return label_name in self.defined_labels
