@@ -89,9 +89,9 @@ class SmaliParser:
             self.ctx.exit_method()
 
         elif token.type == 'DIR_REGISTERS':
-            self.eat('DIR_REGISTERS')
+            dir = self.eat('DIR_REGISTERS')
             lit = self.eat('INT_LITERAL')
-            self.ctx.set_registers(int(lit.value))
+            self.ctx.set_registers(int(lit.value), dir.value)
 
         elif token.type == 'LABEL':
             self.eat('LABEL')
