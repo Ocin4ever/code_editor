@@ -29,9 +29,9 @@ class MethodContext:
         
         current_p_index = 0
 
-        # Handle "this" if the method is a non-static
+        # If the method is non-static, "this" is the first implicit argument
         if not self.is_static:
-            self.p_types[current_p_index] = "Lthis;" # TODO: put the class name
+            self.p_types[current_p_index] = "L"
             current_p_index += 1
 
         for p_type in param_types_list:
