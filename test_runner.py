@@ -136,6 +136,8 @@ def main():
     .method public test()V
         .registers 2
         :start
+        const/4 v0, 4
+        const/4 v1, 3
         if-eq v0, v1, :start
         if-eqz v0, :start
     .end method
@@ -147,6 +149,8 @@ def main():
     .method public test()V
         .registers 2
         :start
+        const/4 v0, 4
+        const/4 v1, 3
         if-eqz v0, v1, :start
     .end method
     """
