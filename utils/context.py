@@ -147,6 +147,7 @@ class MethodContext:
         """
         Collect each label definition (like :cond_0) inside the block .method to .end_method
         """
+
         found = set()
         i = start_index
         while i < len(lines):
@@ -156,6 +157,11 @@ class MethodContext:
             if line.startswith(":"):
                 parts = line.split()
                 if parts:
-                    found.add(parts[0])
+                    label = parts[0]
+                    if label in found:
+                        raise SyntaxError(
+                            f"Duplicate label definition found: '{label}' at line index {i}"
+                        )
+                    found.add(label)
             i += 1
         return found
