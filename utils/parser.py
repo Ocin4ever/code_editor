@@ -1,10 +1,45 @@
 class SmaliParser:
-    def __init__(self, tokens, context, lines=None, line_index=0):
-        self.tokens = tokens
+    def __init__(self, context):
+        self.tokens = []
         self.pos = 0
         self.ctx = context
-        self.lines = lines
-        self.line_index = line_index
+        self.lines = []
+        self.line_index = 0
+        self.errors = []
+
+    def parse_code(self, code, lexer):
+        """
+        Parse a full block of Smali code and collects errors.
+        """
+        self.errors = []
+        self.lines = code.splitlines()
+
+        for i, line in enumerate(self.lines):
+            clean = line.strip()
+            if not clean:
+                continue
+
+            try:
+                tokens = lexer.tokenize(line)
+                if not tokens:
+                    continue
+
+                self.tokens = tokens
+                self.pos = 0
+                self.line_index = i
+
+                self.parse_line()
+
+            except Exception as e:
+                self.errors.append((i, str(e)))
+
+        if self.ctx.in_method:
+            self.errors.append(
+                (len(self.lines) - 1, "Unexpected EOF: missing '.end method'")
+            )
+            self.ctx.exit_method()
+
+        return len(self.errors) == 0
 
     # --- Utilities ---
     def current_token(self):
