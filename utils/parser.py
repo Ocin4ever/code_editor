@@ -1,6 +1,3 @@
-from .tokens import Token
-
-
 class SmaliParser:
     def __init__(self, tokens, context, lines=None, line_index=0):
         self.tokens = tokens
@@ -100,7 +97,7 @@ class SmaliParser:
         Decide the order of the choosen instructions
         """
         token = self.current_token()
-        if not token:
+        if token is None:
             return False
 
         # Directives
@@ -134,6 +131,8 @@ class SmaliParser:
 
     def parse_instruction(self):
         token = self.current_token()
+        if token is None:
+            return
 
         if token.type == "OP_CONST":
             self.parse_const()
@@ -257,16 +256,18 @@ class SmaliParser:
         """
 
         self.eat("OP_INVOKE")
-
         self.eat("BRACE_OPEN")
+
         arg_count = 0
-        if self.current_token().type != "BRACE_CLOSE":
+        token = self.current_token()
+        if token and token.type != "BRACE_CLOSE":
             while True:
                 reg1 = self.eat("REGISTER")
                 self.check_register_access(reg1)
                 arg_count += 1
 
-                if self.current_token().type == "COMMA":
+                token = self.current_token()
+                if token and token.type == "COMMA":
                     self.eat("COMMA")
                 else:
                     break
