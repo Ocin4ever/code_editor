@@ -59,9 +59,15 @@ class MethodContext:
 
         while i < length:
             start_i = i
+            array_depth = 0
 
             # "[" means an array
             while i < length and signature[i] == "[":
+                array_depth += 1
+                if array_depth > 255:
+                    raise ValueError(
+                        f"Array dimensions exceed Dalvik limit of 255 in signature: '{signature}'"
+                    )
                 i += 1
 
             if i < length:
