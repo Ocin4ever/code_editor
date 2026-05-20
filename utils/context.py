@@ -14,7 +14,7 @@ class MethodContext:
 
     def enter_method(self, raw_lines, start_index):
         if self.in_method:
-            raise SyntaxError(f"Unexpected method declaration: already in a method")
+            raise SyntaxError("Unexpected method declaration: already in a method")
         self.in_method = True
         line = raw_lines[start_index]
 
@@ -58,7 +58,6 @@ class MethodContext:
         length = len(signature)
 
         while i < length:
-            char = signature[i]
             start_i = i
 
             # "[" means an array
