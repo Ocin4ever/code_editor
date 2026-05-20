@@ -1,5 +1,6 @@
 import re
 
+
 class MethodContext:
     def __init__(self):
         self.in_method = False
@@ -8,25 +9,26 @@ class MethodContext:
         self.register_count = 0
         self.defined_labels = set()
 
-        self.v_types = {} 
+        self.v_types = {}
         self.p_types = {}
 
     def enter_method(self, raw_lines, start_index):
-        if self.in_method: raise SyntaxError(f"Unexpected method declaration: already in a method")
+        if self.in_method:
+            raise SyntaxError(f"Unexpected method declaration: already in a method")
         self.in_method = True
         line = raw_lines[start_index]
-        
-        self.is_static = 'static' in line
-        
+
+        self.is_static = "static" in line
+
         self.defined_labels = self._scan_labels(raw_lines, start_index)
         self.v_types = {}
         self.p_types = {}
-        
-        match = re.search(r'\((.*?)\)', line) # Match the parameters between ()
+
+        match = re.search(r"\((.*?)\)", line)  # Match the parameters between ()
         signature_content = match.group(1) if match else ""
-        
+
         param_types_list = self._parse_signature_types(signature_content)
-        
+
         current_p_index = 0
 
         # If the method is non-static, "this" is the first implicit argument
@@ -36,14 +38,14 @@ class MethodContext:
 
         for p_type in param_types_list:
             self.p_types[current_p_index] = p_type
-            
-            if p_type in ['J', 'D']:
+
+            if p_type in ["J", "D"]:
                 # We just set a value that means that it's not meant to be used with a different register
                 self.p_types[current_p_index + 1] = "reserved_wide"
                 current_p_index += 2
             else:
                 current_p_index += 1
-        
+
         self.param_count = current_p_index
 
     def _parse_signature_types(self, signature):
@@ -54,29 +56,29 @@ class MethodContext:
         types = []
         i = 0
         length = len(signature)
-        
+
         while i < length:
             char = signature[i]
             start_i = i
-            
+
             # "[" means an array
-            while i < length and signature[i] == '[':
+            while i < length and signature[i] == "[":
                 i += 1
-            
+
             if i < length:
                 curr_char = signature[i]
                 # "L" means an objet
-                if curr_char == 'L':
-                    while i < length and signature[i] != ';':
+                if curr_char == "L":
+                    while i < length and signature[i] != ";":
                         i += 1
-                    i += 1 # eat ';'
+                    i += 1  # eat ';'
                 else:
                     # "I", "Z", "B", "S", "C", "F", "J", "D" means primitives
                     i += 1
-            
+
             full_type = signature[start_i:i]
             types.append(full_type)
-            
+
         return types
 
     def get_max_p_index(self):
@@ -103,23 +105,23 @@ class MethodContext:
         self.v_types.clear()
         self.p_types.clear()
 
-    def set_registers(self, count, directive='.registers'):
+    def set_registers(self, count, directive=".registers"):
         """
         Initiate values seens from '.registers 5' or '.locals 5'
 
         Default:
             '.registers': default apktool output
 
-        Note: 
+        Note:
             '.registers': give the explicit number of v registers (including p registers)
             '.locals': give the number of p registers (excluding p registers)
         """
 
         if self.in_method:
             match directive:
-                case '.registers':
+                case ".registers":
                     self.register_count = count
-                case '.locals':
+                case ".locals":
                     self.register_count = count + self.param_count
                 case _:
                     raise SyntaxError(f"Unknown directive: {directive}")
@@ -144,9 +146,9 @@ class MethodContext:
         i = start_index
         while i < len(lines):
             line = lines[i].strip()
-            if line.startswith('.end method'):
+            if line.startswith(".end method"):
                 break
-            if line.startswith(':'):
+            if line.startswith(":"):
                 parts = line.split()
                 if parts:
                     found.add(parts[0])
