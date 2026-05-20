@@ -9,55 +9,43 @@ class Colors:
     RESET = "\033[0m"
 
 
-def run_test(name, code, expected_error_substring=None):
+def run_test(name, code, expected_errors=None):
     """
     Runs a single test case.
     - If expected_error_substring is None, we expect PASS.
     - If it's a string, we expect a FAIL containing that string.
     """
+    if expected_errors is None:
+        expected_errors = []
+
     lexer = Lexer()
     ctx = MethodContext()
-    lines = code.splitlines()
-    error_found = None
+    parser = SmaliParser(ctx)
 
-    try:
-        for i, line in enumerate(lines):
-            clean = line.strip()
-            if not clean:
-                continue
+    parser.parse_code(code, lexer)
+    actual_errors = parser.errors
 
-            tokens = lexer.tokenize(line)
-            if not tokens:
-                continue
+    if len(actual_errors) != len(expected_errors):
+        print(f"{Colors.FAIL}[FAIL] {name}{Colors.RESET}")
+        print(
+            f"       Expected {len(expected_errors)} errors, got {len(actual_errors)}."
+        )
+        print(f"       Expected: {expected_errors}")
+        print(f"       Got:      {actual_errors}")
+        return False
 
-            parser = SmaliParser(tokens, ctx, lines, i)
-            parser.parse_line()
-
-        if ctx.in_method:
-            raise SyntaxError("Unexpected EOF: missing '.end method'")
-
-    except Exception as e:
-        error_found = str(e)
-
-    # --- Result Evaluation ---
-    if expected_error_substring is None:
-        if error_found:
+    for i in range(len(expected_errors)):
+        exp_line, exp_sub = expected_errors[i]
+        act_line, act_msg = actual_errors[i]
+        if exp_line != act_line or exp_sub not in act_msg:
             print(f"{Colors.FAIL}[FAIL] {name}{Colors.RESET}")
-            print(f"       Expected: SUCCESS")
-            print(f"       Got Error: {error_found}")
+            print(f"       Mismatch details:")
+            print(f"       Expected: Line {exp_line} containing '{exp_sub}'")
+            print(f"       Got:      Line {act_line} with message '{act_msg}'")
             return False
-        else:
-            print(f"{Colors.PASS}[PASS] {name}{Colors.RESET}")
-            return True
-    else:
-        if error_found and expected_error_substring in error_found:
-            print(f"{Colors.PASS}[PASS] {name}{Colors.RESET}")
-            return True
-        else:
-            print(f"{Colors.FAIL}[FAIL] {name}{Colors.RESET}")
-            print(f"       Expected Error containing: '{expected_error_substring}'")
-            print(f"       Got: {error_found if error_found else 'SUCCESS (No Error)'}")
-            return False
+
+    print(f"{Colors.PASS}[PASS] {name}{Colors.RESET}")
+    return True
 
 
 # ==========================================
@@ -81,7 +69,7 @@ def main():
         move v0, v1
     .end method
     """
-    if run_test("Semantics: Valid const/4 range", code_semantics_valid):
+    if run_test("Semantics: Valid const/4 range", code_semantics_valid, []):
         tests_passed += 1
 
     total_tests += 1
@@ -94,7 +82,9 @@ def main():
     # 8 is binary 1000, which is -8 in 4-bit signed, but standard parsers reject +8 for const/4
     # Our literal width checker should catch this.
     if run_test(
-        "Semantics: Invalid const/4 range", code_semantics_invalid, "out of range"
+        "Semantics: Invalid const/4 range",
+        code_semantics_invalid,
+        [(3, "Literal 8 out of range for 4-bit signed int. Allowed: [-8, 7]")],
     ):
         tests_passed += 1
 
@@ -110,7 +100,7 @@ def main():
     if run_test(
         "Scope: Register Out of Bounds",
         code_scope_reg,
-        "Local register v2 out of bounds (max v1)",
+        [(4, "Local register v2 out of bounds (max v1)")],
     ):
         tests_passed += 1
 
@@ -121,7 +111,7 @@ def main():
     if run_test(
         "Scope: Instruction outside method",
         code_scope_orphan,
-        "Instruction 'v0' outside method",
+        [(1, "Instruction 'v0' outside method.")],
     ):
         tests_passed += 1
 
@@ -135,7 +125,7 @@ def main():
         :future
     .end method
     """
-    if run_test("Labels: Valid Forward Jump", code_jumps):
+    if run_test("Labels: Valid Forward Jump", code_jumps, []):
         tests_passed += 1
 
     total_tests += 1
@@ -148,7 +138,7 @@ def main():
     if run_test(
         "Labels: Invalid Jump Target",
         code_jumps_bad,
-        "Jump target ':nowhere' not found",
+        [(3, "Jump target ':nowhere' not found in this method.")],
     ):
         tests_passed += 1
 
@@ -164,7 +154,7 @@ def main():
         if-eqz v0, :start
     .end method
     """
-    if run_test("Branching: Correct usage of if-eq and if-eqz", code_branch_mixed):
+    if run_test("Branching: Correct usage of if-eq and if-eqz", code_branch_mixed, []):
         tests_passed += 1
 
     total_tests += 1
@@ -178,7 +168,9 @@ def main():
     .end method
     """
     if run_test(
-        "Branching: if-eqz with too many regs", code_branch_fail, "Expected LABEL"
+        "Branching: if-eqz with too many regs",
+        code_branch_fail,
+        [(6, "Expected LABEL, but found REGISTER")],
     ):
         tests_passed += 1
 
@@ -192,7 +184,7 @@ def main():
         move v0, p2
     .end method
     """
-    if run_test("Params: Wide Type (Long) calculation", code_params_wide):
+    if run_test("Params: Wide Type (Long) calculation", code_params_wide, []):
         tests_passed += 1
 
     total_tests += 1
@@ -207,7 +199,7 @@ def main():
     if run_test(
         "Params: Array of Longs (Reference)",
         code_params_array,
-        "Parameter register p1 out of bounds",
+        [(5, "Parameter register p1 out of bounds. Max is p0.")],
     ):
         tests_passed += 1
 
@@ -222,7 +214,7 @@ def main():
         invoke-static/range {v0 .. v4}, Lutil/Log;->print()V
     .end method
     """
-    if run_test("Invoke: Valid Standard and Range", code_invoke_valid):
+    if run_test("Invoke: Valid Standard and Range", code_invoke_valid, []):
         tests_passed += 1
 
     total_tests += 1
@@ -234,7 +226,9 @@ def main():
     .end method
     """
     if run_test(
-        "Invoke: Exceeds 5 args limit", code_invoke_fail_limit, "max 5 registers"
+        "Invoke: Exceeds 5 args limit",
+        code_invoke_fail_limit,
+        [(4, "Standard invoke supports max 5 registers. Found 6. Use /range instead.")],
     ):
         tests_passed += 1
 
@@ -247,7 +241,9 @@ def main():
     .end method
     """
     if run_test(
-        "Invoke: Invalid Range Order", code_invoke_fail_range, "Invalid register range"
+        "Invoke: Invalid Range Order",
+        code_invoke_fail_range,
+        [(4, "Invalid register range: v2 .. v0")],
     ):
         tests_passed += 1
 
@@ -262,7 +258,7 @@ def main():
     if run_test(
         "Params: Invalid call with no parameter",
         code_params_array,
-        "Parameter register p0 out of bounds. Method has no parameters.",
+        [(4, "Parameter register p0 out of bounds. Method has no parameters.")],
     ):
         tests_passed += 1
 
@@ -276,7 +272,7 @@ def main():
     if run_test(
         "Method: Invalid call with no closing",
         code_method_unended,
-        "Unexpected EOF: missing '.end method'",
+        [(5, "Unexpected EOF: missing '.end method'")],
     ):
         tests_passed += 1
 
@@ -294,7 +290,7 @@ def main():
     if run_test(
         "Method: method inside a method",
         code_method_in_method,
-        "Unexpected method declaration: already in a method",
+        [(4, "Unexpected method declaration: already in a method")],
     ):
         tests_passed += 1
 
@@ -317,7 +313,7 @@ def main():
         return-void
     .end method
     """
-    if run_test("Global: good code", code_random):
+    if run_test("Global: good code", code_random, []):
         tests_passed += 1
 
     total_tests += 1
@@ -339,7 +335,27 @@ def main():
     .end method
     """
     # The first method should have 3 registers declared and the second one 4 registers
-    if run_test("Method: registers vs locals", code_registers_vs_locals):
+    if run_test("Method: registers vs locals", code_registers_vs_locals, []):
+        tests_passed += 1
+
+    total_tests += 1
+    code_multiple_errors = """
+    .method public test()V
+        .registers 2
+        const/4 v0, 99
+        move v1, v5
+        goto :nonexistent
+    .end method
+    """
+    if run_test(
+        "Method: Multiple Errors in One Method",
+        code_multiple_errors,
+        [
+            (3, "Literal 99 out of range for 4-bit signed int. Allowed: [-8, 7]"),
+            (4, "Local register v5 out of bounds (max v1)."),
+            (5, "Jump target ':nonexistent' not found in this method."),
+        ],
+    ):
         tests_passed += 1
 
     # --- Summary ---
