@@ -101,32 +101,33 @@ class SmaliParser:
             return False
 
         # Directives
-        if token.type == "DIR_METHOD_START":
-            if self.lines is not None:
-                self.ctx.enter_method(self.lines, self.line_index)
+        match token.type:
+            case "DIR_METHOD_START":
+                if self.lines is not None:
+                    self.ctx.enter_method(self.lines, self.line_index)
+                self.eat("DIR_METHOD_START")
+                while self.current_token():
+                    self.pos += 1
 
-            self.eat("DIR_METHOD_START")
-            while self.current_token():
+            case "DIR_METHOD_END":
+                self.eat("DIR_METHOD_END")
+                self.ctx.exit_method()
+
+            case "DIR_REGISTERS":
+                dir = self.eat("DIR_REGISTERS")
+                lit = self.eat("INT_LITERAL")
+                self.ctx.set_registers(int(lit.value), dir.value)
+
+            case "LABEL":
+                self.eat("LABEL")
+
+            case token_type if token_type.startswith("OP_"):
+                self.parse_instruction()
+
+            case _:
                 self.pos += 1
+                raise SyntaxError(f"Unexpected token: {token.value}")
 
-        elif token.type == "DIR_METHOD_END":
-            self.eat("DIR_METHOD_END")
-            self.ctx.exit_method()
-
-        elif token.type == "DIR_REGISTERS":
-            dir = self.eat("DIR_REGISTERS")
-            lit = self.eat("INT_LITERAL")
-            self.ctx.set_registers(int(lit.value), dir.value)
-
-        elif token.type == "LABEL":
-            self.eat("LABEL")
-
-        elif token.type.startswith("OP_"):
-            self.parse_instruction()
-
-        else:
-            self.pos += 1
-            raise SyntaxError(f"Unexpected token: {token.value}")
         return True
 
     def parse_instruction(self):
@@ -134,35 +135,27 @@ class SmaliParser:
         if token is None:
             return
 
-        if token.type == "OP_CONST":
-            self.parse_const()
-
-        elif token.type == "OP_BRANCH_BIN":
-            self.parse_binary_branch()
-
-        elif token.type == "OP_BRANCH_ZERO":
-            self.parse_zero_branch()
-
-        elif token.type == "OP_MOVE":
-            self.parse_move()
-
-        elif token.type == "OP_MOVE_RESULT":
-            self.parse_move_result()
-
-        elif token.type == "OP_GOTO":
-            self.parse_goto()
-
-        elif token.type == "OP_RETURN":
-            self.parse_return()
-
-        elif token.type == "OP_INVOKE":
-            self.parse_invoke_standard()
-
-        elif token.type == "OP_INVOKE_RANGE":
-            self.parse_invoke_range()
-
-        elif token.type == "OP_IGET":
-            self.parse_iget()
+        match token.type:
+            case "OP_CONST":
+                self.parse_const()
+            case "OP_BRANCH_BIN":
+                self.parse_binary_branch()
+            case "OP_BRANCH_ZERO":
+                self.parse_zero_branch()
+            case "OP_MOVE":
+                self.parse_move()
+            case "OP_MOVE_RESULT":
+                self.parse_move_result()
+            case "OP_GOTO":
+                self.parse_goto()
+            case "OP_RETURN":
+                self.parse_return()
+            case "OP_INVOKE":
+                self.parse_invoke_standard()
+            case "OP_INVOKE_RANGE":
+                self.parse_invoke_range()
+            case "OP_IGET":
+                self.parse_iget()
 
     def parse_const(self):
         """
