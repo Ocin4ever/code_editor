@@ -7,6 +7,7 @@ class DalvikParser:
         self.line_index = 0
         self.errors = []
 
+    # --- Main function ---
     def parse_code(self, code, lexer):
         """
         Parse a full block of Dalvik code and collects errors.
@@ -53,7 +54,7 @@ class DalvikParser:
         found = token.type if token else "EOF"
         raise SyntaxError(f"Expected {token_type}, but found {found}")
 
-    # --- Semantic Validators ---
+    # --- Semantic Checks ---
     def check_register_access(self, token):
         if not self.ctx.in_method:
             raise SyntaxError(f"Instruction '{token.value}' outside method.")
@@ -127,6 +128,7 @@ class DalvikParser:
         else:
             self.ctx.v_types[reg_idx] = "I"
 
+    # --- Syntaxic Checks ---
     def parse_line(self):
         """
         Decide the order of the choosen instructions
@@ -273,6 +275,83 @@ class DalvikParser:
         lbl1 = self.eat("LABEL")
         self.check_label_target(lbl1)
 
+    def parse_move(self):
+        """
+        Format:
+        move vx, vy
+        move-wide vx, vy
+        move-object vx, vy
+        move/from16 vx, vy
+        move/16 vx, vy
+        move-wide/from16 vx, vy
+        move-wide/16 vx, vy
+        move-object/from16 vx, vy
+        move-object/16 vx, vy
+        """
+
+        tok = self.eat("OP_MOVE")
+        op_name = tok.value
+
+        reg1 = self.eat("REGISTER")
+        self.check_register_access(reg1)
+        self.eat("COMMA")
+        reg2 = self.eat("REGISTER")
+        self.check_register_access(reg2)
+
+        if "/from16" in op_name:
+            self.check_register_width(reg1, 8)
+            self.check_register_width(reg2, 16)
+        elif "/16" in op_name:
+            self.check_register_width(reg1, 16)
+            self.check_register_width(reg2, 16)
+        else:
+            self.check_register_width(reg1, 4)
+            self.check_register_width(reg2, 4)
+
+    def parse_move_result(self):
+        """
+        Format:
+        move-result vx
+        move-result-wide vx
+        move-result-object vx
+        move-exception vx
+        """
+
+        self.eat("OP_MOVE_RESULT")
+        reg1 = self.eat("REGISTER")
+        self.check_register_access(reg1)
+        self.check_register_width(reg1, 8)
+
+    def parse_goto(self):
+        """
+        Format:
+        goto :label
+        goto/16 :label
+        goto/32 :label
+        """
+
+        self.eat("OP_GOTO")
+        lbl = self.eat("LABEL")
+        self.check_label_target(lbl)
+
+    def parse_return(self):
+        """
+        Format:
+        return vx
+        return-void
+        return-wide vx
+        return-object vx
+        """
+
+        tok = self.eat("OP_RETURN")
+        op_name = tok.value
+
+        if "void" in op_name:
+            return
+        else:
+            reg1 = self.eat("REGISTER")
+            self.check_register_access(reg1)
+
     def parse_invoke_standard(self):
         """
         Format:
@@ -362,80 +441,3 @@ class DalvikParser:
         self.check_register_access(reg2)
         self.eat("COMMA")
         self.eat("FIELD_REF")
-
-    def parse_move(self):
-        """
-        Format:
-        move vx, vy
-        move-wide vx, vy
-        move-object vx, vy
-        move/from16 vx, vy
-        move/16 vx, vy
-        move-wide/from16 vx, vy
-        move-wide/16 vx, vy
-        move-object/from16 vx, vy
-        move-object/16 vx, vy
-        """
-
-        tok = self.eat("OP_MOVE")
-        op_name = tok.value
-
-        reg1 = self.eat("REGISTER")
-        self.check_register_access(reg1)
-        self.eat("COMMA")
-        reg2 = self.eat("REGISTER")
-        self.check_register_access(reg2)
-
-        if "/from16" in op_name:
-            self.check_register_width(reg1, 8)
-            self.check_register_width(reg2, 16)
-        elif "/16" in op_name:
-            self.check_register_width(reg1, 16)
-            self.check_register_width(reg2, 16)
-        else:
-            self.check_register_width(reg1, 4)
-            self.check_register_width(reg2, 4)
-
-    def parse_move_result(self):
-        """
-        Format:
-        move-result vx
-        move-result-wide vx
-        move-result-object vx
-        move-exception vx
-        """
-
-        self.eat("OP_MOVE_RESULT")
-        reg1 = self.eat("REGISTER")
-        self.check_register_access(reg1)
-        self.check_register_width(reg1, 8)
-
-    def parse_goto(self):
-        """
-        Format:
-        goto :label
-        goto/16 :label
-        goto/32 :label
-        """
-
-        self.eat("OP_GOTO")
-        lbl = self.eat("LABEL")
-        self.check_label_target(lbl)
-
-    def parse_return(self):
-        """
-        Format:
-        return vx
-        return-void
-        return-wide vx
-        return-object vx
-        """
-
-        tok = self.eat("OP_RETURN")
-        op_name = tok.value
-
-        if "void" in op_name:
-            return
-        else:
-            reg1 = self.eat("REGISTER")
-            self.check_register_access(reg1)
