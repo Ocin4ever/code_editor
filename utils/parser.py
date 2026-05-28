@@ -1,4 +1,4 @@
-class SmaliParser:
+class DalvikParser:
     def __init__(self, context):
         self.tokens = []
         self.pos = 0
@@ -9,7 +9,7 @@ class SmaliParser:
 
     def parse_code(self, code, lexer):
         """
-        Parse a full block of Smali code and collects errors.
+        Parse a full block of Dalvik code and collects errors.
         """
         self.errors = []
         self.lines = code.splitlines()

@@ -1,4 +1,4 @@
-from utils import Lexer, MethodContext, SmaliParser
+from utils import DalvikParser, Lexer, MethodContext
 
 
 class Colors:
@@ -18,7 +18,7 @@ def run_test(name, code, expected_errors=None):
 
     lexer = Lexer()
     ctx = MethodContext()
-    parser = SmaliParser(ctx)
+    parser = DalvikParser(ctx)
 
     parser.parse_code(code, lexer)
     actual_errors = parser.errors
