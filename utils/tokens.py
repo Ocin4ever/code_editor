@@ -11,7 +11,7 @@ TOKEN_TYPES = [
     ('METHOD_REF',       r'L[\w/$]+;->[\w$<>-]+\(.*\)\S+'),
     ('FIELD_REF',        r'L[\w/$]+;->[\w$]+:\S+'),
 
-    # --- Instructions ---
+    # --- Operation Codes ---
     ('OP_CONST',         r'const(-wide(/16|/32)?|(/4|/16|/high16)?|-string(-jumbo)?|-class)?'),
     # Matches:
     # const
