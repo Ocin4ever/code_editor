@@ -109,25 +109,6 @@ class DalvikParser:
         if not self.ctx.has_label(token.value):
             raise ValueError(f"Jump target '{token.value}' not found in this method.")
 
-    def set_register_type(self, op_tok, reg_tok, lit_tok):
-        """
-        Update v_types value corresponding to the given token
-
-        Args:
-            op_tok (token): ex. const/4
-            reg_tok (token): ex. v2
-            lit_tok (token): ex. 0x0
-        """
-
-        op_name = op_tok.value
-        reg_idx = int(reg_tok.value[1:])
-
-        if "wide" in op_name:
-            self.ctx.v_types[reg_idx] = "I"
-            self.ctx.v_types[reg_idx + 1] = "reserved_wide"
-        else:
-            self.ctx.v_types[reg_idx] = "I"
-
     # --- Syntaxic Checks ---
     def parse_line(self):
         """
@@ -233,8 +214,6 @@ class DalvikParser:
                 # Apparently registers are stored on 8 bits (except for const/4)
                 self.check_register_width(reg1, 4)
                 self.check_literal_width(lit1, 4)
-
-        self.set_register_type(tok, reg1, lit1)
 
     def parse_binary_branch(self):
         """
