@@ -2,7 +2,6 @@ import re
 
 from .tokens import TOKEN_TYPES, Token
 
-
 class Lexer:
     def __init__(self):
         self.rules = [
