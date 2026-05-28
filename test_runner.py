@@ -369,20 +369,58 @@ def main():
     code_registers_vs_locals = """
     .method static public test([J)V
         .registers 3
-        # allowed : v0, v1 = p0, v2 = p1
+        # allowed : v0, v1, v2 = p0
 
+        const/4 v0, 0
+        const/4 v1, 0
         const/4 v2, 0
         const/4 v3, 0
+        const/4 p0, 0
+        const/4 p1, 0
 
         return-void
     .end method
 
     .method static public test([J)V
         .locals 3
-        # allowed : v0, v1, v2, v3 = p0, v4 = p1
+        # allowed : v0, v1, v2, v3 = p0
 
+        const/4 v0, 0
+        const/4 v1, 0
         const/4 v2, 0
         const/4 v3, 0
+        const/4 v4, 0
+        const/4 p0, 0
+        const/4 p1, 0
+
+        return-void
+    .end method
+
+    .method static public test(J)V
+        .registers 3
+        # allowed : v0, v1 = p0, v2 = p1
+
+        const/4 v0, 0
+        const/4 v1, 0
+        const/4 v2, 0
+        const/4 v3, 0
+        const/4 p0, 0
+        const/4 p1, 0
+
+        return-void
+    .end method
+
+    .method static public test(J)V
+        .locals 3
+        # allowed : v0, v1, v2, v3 = p0, v4 = p1
+
+        const/4 v0, 0
+        const/4 v1, 0
+        const/4 v2, 0
+        const/4 v3, 0
+        const/4 v4, 0
+        const/4 p0, 0
+        const/4 p1, 0
 
         return-void
     .end method
@@ -390,7 +428,13 @@ def main():
     if run_test(
         "Method: registers vs locals",
         code_registers_vs_locals,
-        [(6, "Local register v3 out of bounds (max v2).")],
+        [
+            (8, "Local register v3 out of bounds (max v2)."),
+            (10, "Parameter register p1 out of bounds. Max is p0."),
+            (23, "Local register v4 out of bounds (max v3)."),
+            (25, "Parameter register p1 out of bounds. Max is p0."),
+            (37, "Local register v3 out of bounds (max v2)."),
+        ],
     ):
         tests_passed += 1
 
