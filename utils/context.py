@@ -92,9 +92,7 @@ class MethodContext:
         Non-static: p0 is 'this', then params.
         Static: p0 is first param.
         """
-        # The logic for static/non-static is handled in _parse_signature_types()
-        # if self.param_count == 0:
-        #     return 0 # In case there's an issue, so that we don't fail
+
         return self.param_count - 1
 
     def exit_method(self):
