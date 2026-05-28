@@ -57,7 +57,6 @@ def main():
 
     print("=== Running Regression Tests ===\n")
 
-    # --- 1. Basic Semantic Checks ---
     total_tests += 1
     code_semantics_valid = """
     .method public test()V
@@ -67,8 +66,14 @@ def main():
         move v0, v1
     .end method
     """
-    if run_test("Semantics: Valid const/4 range", code_semantics_valid, []):
+    if run_test(
+        "Semantics: Valid const/4 range",
+        code_semantics_valid,
+        [],
+    ):
         tests_passed += 1
+
+    # ----------------------
 
     total_tests += 1
     code_semantics_invalid = """
@@ -77,8 +82,6 @@ def main():
         const/4 v0, 8
     .end method
     """
-    # 8 is binary 1000, which is -8 in 4-bit signed, but standard parsers reject +8 for const/4
-    # Our literal width checker should catch this.
     if run_test(
         "Semantics: Invalid const/4 range",
         code_semantics_invalid,
@@ -86,7 +89,8 @@ def main():
     ):
         tests_passed += 1
 
-    # --- 2. Scope & Register Bounds ---
+    # ----------------------
+
     total_tests += 1
     code_scope_reg = """
     .method public test()V
@@ -102,6 +106,8 @@ def main():
     ):
         tests_passed += 1
 
+    # ----------------------
+
     total_tests += 1
     code_scope_orphan = """
     const/4 v0, 1
@@ -113,7 +119,8 @@ def main():
     ):
         tests_passed += 1
 
-    # --- 3. Label Resolution (Forward Jumps) ---
+    # ----------------------
+
     total_tests += 1
     code_jumps = """
     .method public test()V
@@ -123,8 +130,14 @@ def main():
         :future
     .end method
     """
-    if run_test("Labels: Valid Forward Jump", code_jumps, []):
+    if run_test(
+        "Labels: Valid Forward Jump",
+        code_jumps,
+        [],
+    ):
         tests_passed += 1
+
+    # ----------------------
 
     total_tests += 1
     code_jumps_bad = """
@@ -140,7 +153,8 @@ def main():
     ):
         tests_passed += 1
 
-    # --- 4. Branching Logic (Binary vs Zero) ---
+    # ----------------------
+
     total_tests += 1
     code_branch_mixed = """
     .method public test()V
@@ -152,8 +166,14 @@ def main():
         if-eqz v0, :start
     .end method
     """
-    if run_test("Branching: Correct usage of if-eq and if-eqz", code_branch_mixed, []):
+    if run_test(
+        "Branching: Correct usage of if-eq and if-eqz",
+        code_branch_mixed,
+        [],
+    ):
         tests_passed += 1
+
+    # ----------------------
 
     total_tests += 1
     code_branch_fail = """
@@ -172,7 +192,8 @@ def main():
     ):
         tests_passed += 1
 
-    # --- 5. Parameter Logic (Wide Types) ---
+    # ----------------------
+
     total_tests += 1
     code_params_wide = """
     .method public test(J)V
@@ -182,8 +203,14 @@ def main():
         move v0, p2
     .end method
     """
-    if run_test("Params: Wide Type (Long) calculation", code_params_wide, []):
+    if run_test(
+        "Params: Wide Type (Long) calculation",
+        code_params_wide,
+        [],
+    ):
         tests_passed += 1
+
+    # ----------------------
 
     total_tests += 1
     code_params_array = """
@@ -201,6 +228,8 @@ def main():
     ):
         tests_passed += 1
 
+    # ----------------------
+
     total_tests += 1
     code_invoke_valid = """
     .method public test()V
@@ -212,8 +241,14 @@ def main():
         invoke-static/range {v0 .. v4}, Lutil/Log;->print()V
     .end method
     """
-    if run_test("Invoke: Valid Standard and Range", code_invoke_valid, []):
+    if run_test(
+        "Invoke: Valid Standard and Range",
+        code_invoke_valid,
+        [],
+    ):
         tests_passed += 1
+
+    # ----------------------
 
     total_tests += 1
     code_invoke_fail_limit = """
@@ -230,6 +265,8 @@ def main():
     ):
         tests_passed += 1
 
+    # ----------------------
+
     total_tests += 1
     code_invoke_fail_range = """
     .method public test()V
@@ -244,6 +281,8 @@ def main():
         [(4, "Invalid register range: v2 .. v0")],
     ):
         tests_passed += 1
+
+    # ----------------------
 
     total_tests += 1
     code_params_array = """
@@ -260,6 +299,8 @@ def main():
     ):
         tests_passed += 1
 
+    # ----------------------
+
     total_tests += 1
     code_method_unended = """
     .method public test()V
@@ -273,6 +314,8 @@ def main():
         [(5, "Unexpected EOF: missing '.end method'")],
     ):
         tests_passed += 1
+
+    # ----------------------
 
     total_tests += 1
     code_method_in_method = """
@@ -291,6 +334,8 @@ def main():
         [(4, "Unexpected method declaration: already in a method")],
     ):
         tests_passed += 1
+
+    # ----------------------
 
     total_tests += 1
     code_random = """
@@ -311,30 +356,45 @@ def main():
         return-void
     .end method
     """
-    if run_test("Global: good code", code_random, []):
+    if run_test(
+        "Global: good code",
+        code_random,
+        [],
+    ):
         tests_passed += 1
+
+    # ----------------------
 
     total_tests += 1
     code_registers_vs_locals = """
     .method static public test([J)V
         .registers 3
+        # allowed : v0, v1 = p0, v2 = p1
 
-        const/4 v1, 0
+        const/4 v2, 0
+        const/4 v3, 0
 
         return-void
     .end method
 
     .method static public test([J)V
         .locals 3
+        # allowed : v0, v1, v2, v3 = p0, v4 = p1
 
-        const/4 v1, 0
+        const/4 v2, 0
+        const/4 v3, 0
 
         return-void
     .end method
     """
-    # The first method should have 3 registers declared and the second one 4 registers
-    if run_test("Method: registers vs locals", code_registers_vs_locals, []):
+    if run_test(
+        "Method: registers vs locals",
+        code_registers_vs_locals,
+        [(6, "Local register v3 out of bounds (max v2).")],
+    ):
         tests_passed += 1
+
+    # ----------------------
 
     total_tests += 1
     code_multiple_errors = """
@@ -356,7 +416,6 @@ def main():
     ):
         tests_passed += 1
 
-    # --- Summary ---
     print("\n" + "=" * 30)
     print(f"Tests Passed: {tests_passed}/{total_tests}")
     if tests_passed == total_tests:
