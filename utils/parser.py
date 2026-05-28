@@ -366,7 +366,7 @@ class SmaliParser:
     def parse_move(self):
         """
         Format:
-        move vx,vy
+        move vx, vy
         move-wide vx, vy
         move-object vx, vy
         move/from16 vx, vy
