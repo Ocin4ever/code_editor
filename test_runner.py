@@ -1,5 +1,3 @@
-import sys
-
 from utils import Lexer, MethodContext, SmaliParser
 
 
